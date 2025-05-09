@@ -85,7 +85,15 @@ class Scorer {
             Category.SIXES -> dice.getSumForDie(6)
             Category.THREE_OF_KIND -> dice.getSumForKind(3)
             Category.FOUR_OF_KIND -> dice.getSumForKind(4)
-            Category.FULL_HOUSE -> if (dice.distinct().size == 2 || dice.isBonusYahtzee()) 25 else 0
+            Category.FULL_HOUSE -> if (
+                dice.distinct().let {
+                    when (it.size) {
+                        1 -> dice.isBonusYahtzee()
+                        2 -> dice.groupingBy { it.value }.eachCount().filterValues { it < 4 }.size == 2
+                        else -> false
+                    }
+                }
+            ) 25 else 0
             Category.SMALL_STRAIGHT -> dice.map { it.value }.distinct().sorted().let {
                 when (it.size) {
                     1 -> if (dice.isBonusYahtzee()) 30 else 0
@@ -98,7 +106,7 @@ class Scorer {
                     else -> 0
                 }
             }
-            Category.LARGE_STRAIGHT -> if (dice.distinct().size == 5 || dice.isBonusYahtzee()) 40 else 0
+            Category.LARGE_STRAIGHT -> if (dice.distinctBy { it.value }.size == 5 || dice.isBonusYahtzee()) 40 else 0
             Category.CHANCE -> dice.sumOf { it.value }
             Category.YAHTZEE -> if (dice.isYahtzee()) 50 else 0
         }
@@ -135,13 +143,13 @@ class Scorer {
         filter { it.value == die }.sumOf { it.value }
 
     private fun List<Roller.Die>.getSumForKind(kind: Int) =
-        if (groupingBy { it.value }.eachCount().filter { it.value > kind }.isNotEmpty()) {
+        if (groupingBy { it.value }.eachCount().filterValues { it >= kind }.isNotEmpty()) {
             sumOf { it.value }
         } else {
             0
         }
 
-    private fun List<Roller.Die>.isYahtzee() = distinct().size == 1
+    private fun List<Roller.Die>.isYahtzee() = distinctBy { it.value }.size == 1
 
     private fun List<Roller.Die>.isBonusYahtzee() = scorecardEntries[Category.YAHTZEE] == 50 && isYahtzee()
 

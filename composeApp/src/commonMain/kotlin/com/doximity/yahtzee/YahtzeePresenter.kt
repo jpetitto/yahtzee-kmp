@@ -4,7 +4,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.doximity.yahtzee.YahtzeeUiModel.Die
@@ -18,11 +17,11 @@ class YahtzeePresenter(
     private val scorer: Scorer
 ) {
 
+    private var rollsLeft by mutableStateOf(MAX_ROLLS)
+
     @Composable
     fun present(): YahtzeeUiModel {
         val scope = rememberCoroutineScope()
-
-        var rollsLeft by remember { mutableStateOf(MAX_ROLLS) }
 
         val dice by roller.observeDice().collectAsState()
         val scorecard by scorer.observeScorecard().collectAsState()
@@ -64,6 +63,8 @@ class YahtzeePresenter(
             onReset = {
                 scope.launch {
                     roller.reset()
+                    scorer.reset()
+                    rollsLeft = MAX_ROLLS
                 }
             }
         )
@@ -78,7 +79,11 @@ class YahtzeePresenter(
         } ?: YahtzeeUiModel.ScoreBox.Empty(
             score = scorer.calculateScore(box.category, dice).takeIf { it > 0 },
             onFill = {
-                scope.launch { scorer.submitScore(box.category, dice) }
+                scope.launch {
+                    scorer.submitScore(box.category, dice)
+                    roller.reset()
+                    rollsLeft = MAX_ROLLS
+                }
             }
         )
     }
