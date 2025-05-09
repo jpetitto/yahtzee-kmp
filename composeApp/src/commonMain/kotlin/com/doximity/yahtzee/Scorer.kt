@@ -22,29 +22,30 @@ class Scorer {
         YAHTZEE
     }
 
-    data class Box(val category: Category, val score: Int? = null)
+    data class Entry(val category: Category, val score: Int? = null)
 
     data class Scorecard(
-        val ones: Box = Box(Category.ONES),
-        val twos: Box = Box(Category.TWOS),
-        val threes: Box = Box(Category.THREES),
-        val fours: Box = Box(Category.FOURS),
-        val fives: Box = Box(Category.FIVES),
-        val sixes: Box = Box(Category.SIXES),
+        val ones: Entry = Entry(Category.ONES),
+        val twos: Entry = Entry(Category.TWOS),
+        val threes: Entry = Entry(Category.THREES),
+        val fours: Entry = Entry(Category.FOURS),
+        val fives: Entry = Entry(Category.FIVES),
+        val sixes: Entry = Entry(Category.SIXES),
+        val sum: Int? = null,
         val sumBonus: Int? = null,
-        val threeKind: Box = Box(Category.THREE_OF_KIND),
-        val fourKind: Box = Box(Category.FOUR_OF_KIND),
-        val fullHouse: Box = Box(Category.FULL_HOUSE),
-        val smallStraight: Box = Box(Category.SMALL_STRAIGHT),
-        val largeStraight: Box = Box(Category.LARGE_STRAIGHT),
-        val chance: Box = Box(Category.CHANCE),
-        val yahtzee: Box = Box(Category.YAHTZEE),
+        val threeKind: Entry = Entry(Category.THREE_OF_KIND),
+        val fourKind: Entry = Entry(Category.FOUR_OF_KIND),
+        val fullHouse: Entry = Entry(Category.FULL_HOUSE),
+        val smallStraight: Entry = Entry(Category.SMALL_STRAIGHT),
+        val largeStraight: Entry = Entry(Category.LARGE_STRAIGHT),
+        val chance: Entry = Entry(Category.CHANCE),
+        val yahtzee: Entry = Entry(Category.YAHTZEE),
         val yahtzeeBonus: Int? = null,
         val total: Int? = null
     )
 
     private var turnsLeft = TOTAL_TURNS
-    private var sumBonus = 0
+    private var sum = 0
     private var yahtzeeBonus: Int? = null
     private val scorecardEntries: MutableMap<Category, Int> = mutableMapOf()
     private val scorecardFlow = MutableStateFlow(Scorecard())
@@ -62,7 +63,7 @@ class Scorer {
             Category.THREES,
             Category.FOURS,
             Category.FIVES,
-            Category.SIXES -> sumBonus += score
+            Category.SIXES -> sum += score
             else -> Unit
         }
 
@@ -86,7 +87,7 @@ class Scorer {
             Category.THREE_OF_KIND -> dice.getSumForKind(3)
             Category.FOUR_OF_KIND -> dice.getSumForKind(4)
             Category.FULL_HOUSE -> if (
-                dice.distinct().let {
+                dice.distinctBy { it.value }.let {
                     when (it.size) {
                         1 -> dice.isBonusYahtzee()
                         2 -> dice.groupingBy { it.value }.eachCount().filterValues { it < 4 }.size == 2
@@ -115,20 +116,21 @@ class Scorer {
     private suspend fun updateScorecardFlow() {
         scorecardFlow.emit(
             Scorecard(
-                ones = Box(Category.ONES, scorecardEntries[Category.ONES]),
-                twos = Box(Category.TWOS, scorecardEntries[Category.TWOS]),
-                threes = Box(Category.THREES, scorecardEntries[Category.THREES]),
-                fours = Box(Category.FOURS, scorecardEntries[Category.FOURS]),
-                fives = Box(Category.FIVES, scorecardEntries[Category.FIVES]),
-                sixes = Box(Category.SIXES, scorecardEntries[Category.SIXES]),
+                ones = Entry(Category.ONES, scorecardEntries[Category.ONES]),
+                twos = Entry(Category.TWOS, scorecardEntries[Category.TWOS]),
+                threes = Entry(Category.THREES, scorecardEntries[Category.THREES]),
+                fours = Entry(Category.FOURS, scorecardEntries[Category.FOURS]),
+                fives = Entry(Category.FIVES, scorecardEntries[Category.FIVES]),
+                sixes = Entry(Category.SIXES, scorecardEntries[Category.SIXES]),
+                sum = if (turnsLeft == 0) sum else null,
                 sumBonus = if (turnsLeft == 0) getSumBonusTotal() else null,
-                threeKind = Box(Category.THREE_OF_KIND, scorecardEntries[Category.THREE_OF_KIND]),
-                fourKind = Box(Category.FOUR_OF_KIND, scorecardEntries[Category.FOUR_OF_KIND]),
-                fullHouse = Box(Category.FULL_HOUSE, scorecardEntries[Category.FULL_HOUSE]),
-                smallStraight = Box(Category.FIVES, scorecardEntries[Category.SMALL_STRAIGHT]),
-                largeStraight = Box(Category.LARGE_STRAIGHT, scorecardEntries[Category.LARGE_STRAIGHT]),
-                chance = Box(Category.CHANCE, scorecardEntries[Category.CHANCE]),
-                yahtzee = Box(Category.YAHTZEE, scorecardEntries[Category.YAHTZEE]),
+                threeKind = Entry(Category.THREE_OF_KIND, scorecardEntries[Category.THREE_OF_KIND]),
+                fourKind = Entry(Category.FOUR_OF_KIND, scorecardEntries[Category.FOUR_OF_KIND]),
+                fullHouse = Entry(Category.FULL_HOUSE, scorecardEntries[Category.FULL_HOUSE]),
+                smallStraight = Entry(Category.SMALL_STRAIGHT, scorecardEntries[Category.SMALL_STRAIGHT]),
+                largeStraight = Entry(Category.LARGE_STRAIGHT, scorecardEntries[Category.LARGE_STRAIGHT]),
+                chance = Entry(Category.CHANCE, scorecardEntries[Category.CHANCE]),
+                yahtzee = Entry(Category.YAHTZEE, scorecardEntries[Category.YAHTZEE]),
                 yahtzeeBonus = yahtzeeBonus,
                 total = if (turnsLeft == 0) {
                     scorecardEntries.values.sum() + getSumBonusTotal() + (yahtzeeBonus ?: 0)
@@ -153,11 +155,11 @@ class Scorer {
 
     private fun List<Roller.Die>.isBonusYahtzee() = scorecardEntries[Category.YAHTZEE] == 50 && isYahtzee()
 
-    private fun getSumBonusTotal() = if (sumBonus >= 63) 35 else 0
+    private fun getSumBonusTotal() = if (sum >= 63) 35 else 0
 
     suspend fun reset() {
         turnsLeft = TOTAL_TURNS
-        sumBonus = 0
+        sum = 0
         yahtzeeBonus = null
         scorecardEntries.clear()
         scorecardFlow.emit(Scorecard())

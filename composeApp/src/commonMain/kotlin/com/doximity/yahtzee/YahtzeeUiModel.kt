@@ -8,7 +8,8 @@ data class YahtzeeUiModel(
 ) {
 
     sealed interface ScoreBox {
-        data class Empty(val score: Int?, val onFill: () -> Unit) : ScoreBox
+        data object Empty : ScoreBox
+        data class Unfilled(val score: Int?, val onFill: () -> Unit) : ScoreBox
         data class Filled(val score: Int) : ScoreBox
     }
 
@@ -19,6 +20,7 @@ data class YahtzeeUiModel(
         val fours: ScoreBox,
         val fives: ScoreBox,
         val sixes: ScoreBox,
+        val sum: Int?,
         val sumBonus: Int?,
         val threeKind: ScoreBox,
         val fourKind: ScoreBox,

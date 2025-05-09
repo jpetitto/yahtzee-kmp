@@ -8,6 +8,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.doximity.yahtzee.YahtzeeUiModel.Die
 import com.doximity.yahtzee.YahtzeeUiModel.Roll
+import com.doximity.yahtzee.YahtzeeUiModel.ScoreBox
 import kotlinx.coroutines.launch
 
 private const val MAX_ROLLS = 3
@@ -34,6 +35,7 @@ class YahtzeePresenter(
                 fours = createScoreBox(scorecard.fours, dice),
                 fives = createScoreBox(scorecard.fives, dice),
                 sixes = createScoreBox(scorecard.sixes, dice),
+                sum = scorecard.sum,
                 sumBonus = scorecard.sumBonus,
                 threeKind = createScoreBox(scorecard.threeKind, dice),
                 fourKind = createScoreBox(scorecard.fourKind, dice),
@@ -71,20 +73,22 @@ class YahtzeePresenter(
     }
 
     @Composable
-    private fun createScoreBox(box: Scorer.Box, dice: List<Roller.Die>): YahtzeeUiModel.ScoreBox {
+    private fun createScoreBox(entry: Scorer.Entry, dice: List<Roller.Die>): ScoreBox {
         val scope = rememberCoroutineScope()
 
-        return box.score?.let {
-            YahtzeeUiModel.ScoreBox.Filled(it)
-        } ?: YahtzeeUiModel.ScoreBox.Empty(
-            score = scorer.calculateScore(box.category, dice).takeIf { it > 0 },
-            onFill = {
-                scope.launch {
-                    scorer.submitScore(box.category, dice)
-                    roller.reset()
-                    rollsLeft = MAX_ROLLS
+        return when {
+            entry.score != null -> ScoreBox.Filled(entry.score)
+            rollsLeft == MAX_ROLLS -> ScoreBox.Empty
+            else -> ScoreBox.Unfilled(
+                score = scorer.calculateScore(entry.category, dice),
+                onFill = {
+                    scope.launch {
+                        scorer.submitScore(entry.category, dice)
+                        roller.reset()
+                        rollsLeft = MAX_ROLLS
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 }
