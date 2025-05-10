@@ -95,22 +95,30 @@ class Scorer {
                     }
                 }
             ) 25 else 0
-            Category.SMALL_STRAIGHT -> dice.map { it.value }.distinct().sorted().let {
-                when (it.size) {
-                    1 -> if (dice.isBonusYahtzee()) 30 else 0
-                    4 -> if (it == listOf(1, 2, 3, 4) || it == listOf(2, 3, 4, 5) || it == listOf(3, 4, 5, 6)) {
-                        30
-                    } else {
-                        0
-                    }
-                    5 -> 30
-                    else -> 0
-                }
-            }
-            Category.LARGE_STRAIGHT -> if (dice.distinctBy { it.value }.size == 5 || dice.isBonusYahtzee()) 40 else 0
+            Category.SMALL_STRAIGHT -> if (detectStraight(dice, 4) || dice.isBonusYahtzee()) 30 else 0
+            Category.LARGE_STRAIGHT -> if (detectStraight(dice, 5) || dice.isBonusYahtzee()) 40 else 0
             Category.CHANCE -> dice.sumOf { it.value }
             Category.YAHTZEE -> if (dice.isYahtzee()) 50 else 0
         }
+    }
+
+    private fun detectStraight(dice: List<Roller.Die>, length: Int): Boolean {
+        var count = 0
+        var prevValue = 0
+
+        for (die in dice.map { it.value }.distinct().sorted()) {
+            if (count == length) break
+
+            if (die == prevValue + 1) {
+                count++
+            } else {
+                count = 1
+            }
+
+            prevValue = die
+        }
+
+        return count >= length
     }
 
     private suspend fun updateScorecardFlow() {
