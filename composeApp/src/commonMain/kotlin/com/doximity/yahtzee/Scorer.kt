@@ -1,9 +1,19 @@
 package com.doximity.yahtzee
 
+import com.doximity.yahtzee.Scorer.Category
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 private const val TOTAL_TURNS = 13
+
+private val UPPER_SECTION = listOf(
+    Category.ONES,
+    Category.TWOS,
+    Category.THREES,
+    Category.FOURS,
+    Category.FIVES,
+    Category.SIXES
+)
 
 class Scorer {
     enum class Category {
@@ -54,6 +64,12 @@ class Scorer {
         if (scorecardEntries[category] != null) return // already scored
 
         val score = calculateScore(category, dice)
+
+        // check for bonus yahtzee
+        if (dice.isBonusYahtzee()) {
+            yahtzeeBonus = (yahtzeeBonus ?: 0) + 100
+        }
+
         scorecardEntries[category] = score
 
         // update sum for bonus
@@ -65,11 +81,6 @@ class Scorer {
             Category.FIVES,
             Category.SIXES -> sum += score
             else -> Unit
-        }
-
-        // check for bonus yahtzee
-        if (category != Category.YAHTZEE && dice.isYahtzee() && score != 0) {
-            yahtzeeBonus = yahtzeeBonus?.plus(100)
         }
 
         turnsLeft--
@@ -102,25 +113,6 @@ class Scorer {
         }
     }
 
-    private fun detectStraight(dice: List<Roller.Die>, length: Int): Boolean {
-        var count = 0
-        var prevValue = 0
-
-        for (die in dice.map { it.value }.distinct().sorted()) {
-            if (count == length) break
-
-            if (die == prevValue + 1) {
-                count++
-            } else {
-                count = 1
-            }
-
-            prevValue = die
-        }
-
-        return count >= length
-    }
-
     private suspend fun updateScorecardFlow() {
         scorecardFlow.emit(
             Scorecard(
@@ -130,8 +122,8 @@ class Scorer {
                 fours = Entry(Category.FOURS, scorecardEntries[Category.FOURS]),
                 fives = Entry(Category.FIVES, scorecardEntries[Category.FIVES]),
                 sixes = Entry(Category.SIXES, scorecardEntries[Category.SIXES]),
-                sum = if (turnsLeft == 0) sum else null,
-                sumBonus = if (turnsLeft == 0) getSumBonusTotal() else null,
+                sum = if (isUpperSectionComplete()) sum else null,
+                sumBonus = if (isUpperSectionComplete()) getSumBonusTotal() else null,
                 threeKind = Entry(Category.THREE_OF_KIND, scorecardEntries[Category.THREE_OF_KIND]),
                 fourKind = Entry(Category.FOUR_OF_KIND, scorecardEntries[Category.FOUR_OF_KIND]),
                 fullHouse = Entry(Category.FULL_HOUSE, scorecardEntries[Category.FULL_HOUSE]),
@@ -159,11 +151,32 @@ class Scorer {
             0
         }
 
+    private fun detectStraight(dice: List<Roller.Die>, length: Int): Boolean {
+        var count = 0
+        var prevValue = 0
+
+        for (die in dice.map { it.value }.distinct().sorted()) {
+            if (count == length) break
+
+            if (die == prevValue + 1) {
+                count++
+            } else {
+                count = 1
+            }
+
+            prevValue = die
+        }
+
+        return count >= length
+    }
+
     private fun List<Roller.Die>.isYahtzee() = distinctBy { it.value }.size == 1
 
     private fun List<Roller.Die>.isBonusYahtzee() = scorecardEntries[Category.YAHTZEE] == 50 && isYahtzee()
 
     private fun getSumBonusTotal() = if (sum >= 63) 35 else 0
+
+    private fun isUpperSectionComplete() = scorecardEntries.keys.containsAll(UPPER_SECTION)
 
     suspend fun reset() {
         turnsLeft = TOTAL_TURNS
