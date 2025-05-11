@@ -13,21 +13,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.AlertDialog
 import androidx.compose.material.Button
-import androidx.compose.material.ButtonColors
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.doximity.yahtzee.YahtzeeUiModel.Die
 import com.doximity.yahtzee.YahtzeeUiModel.ScoreBox
 import com.doximity.yahtzee.YahtzeeUiModel.Scorecard
@@ -43,45 +39,35 @@ private fun YahtzeeContent(presenter: YahtzeePresenter) {
     val uiModel = presenter.present()
 
     Box(modifier = Modifier.size(500.dp, 500.dp)) {
-        var showEndGameDialog by remember(uiModel.scorecard.total) {
-            mutableStateOf(uiModel.scorecard.total != null)
-        }
-
-        if (showEndGameDialog) {
-            AlertDialog(
-                onDismissRequest = { showEndGameDialog = false },
-                confirmButton = {
-                    Button(
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = Color(156, 45, 68),
-                            contentColor = Color.White
-                        ),
-                        onClick = uiModel.onReset
-                    ) {
-                        Text("Play again")
-                    }
-                },
-                text = {
-                    Text("Total score: ${uiModel.scorecard.total ?: "Unknown"}")
-                }
-            )
-        }
-
         Column(
-            horizontalAlignment = Alignment.End,
             modifier = Modifier
                 .background(Color(41, 74, 18))
                 .padding(8.dp)
                 .fillMaxHeight()
         ) {
-            Button(
-                colors = ButtonDefaults.buttonColors(
-                    backgroundColor = Color(156, 45, 68),
-                    contentColor = Color.White
-                ),
-                onClick = uiModel.onReset
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(8.dp)
             ) {
-                Text("Restart Game")
+                Text(
+                    text = "Total score: ${uiModel.scorecard.total ?: ""}",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Button(
+                    colors = ButtonDefaults.buttonColors(
+                        backgroundColor = Color(156, 45, 68),
+                        contentColor = Color.White
+                    ),
+                    onClick = uiModel.onReset
+                ) {
+                    Text(if (uiModel.scorecard.total != null) "Play Again" else "Restart Game")
+                }
             }
 
             Spacer(modifier = Modifier.weight(1f))
@@ -101,12 +87,12 @@ private fun YahtzeeContent(presenter: YahtzeePresenter) {
 @Composable
 private fun RowScope.ScorecardLeft(scorecard: Scorecard) {
     Column(modifier = Modifier.weight(1f)) {
-        ScoreBox("1s", scorecard.ones)
-        ScoreBox("2s", scorecard.twos)
-        ScoreBox("3s", scorecard.threes)
-        ScoreBox("4s", scorecard.fours)
-        ScoreBox("5s", scorecard.fives)
-        ScoreBox("6s", scorecard.sixes)
+        ScoreBox("Ones", scorecard.ones)
+        ScoreBox("Twos", scorecard.twos)
+        ScoreBox("Threes", scorecard.threes)
+        ScoreBox("Fours", scorecard.fours)
+        ScoreBox("Fives", scorecard.fives)
+        ScoreBox("Sixes", scorecard.sixes)
         ExtraBox("Sum", scorecard.sum)
         ExtraBox("Bonus", scorecard.sumBonus)
     }
@@ -115,25 +101,14 @@ private fun RowScope.ScorecardLeft(scorecard: Scorecard) {
 @Composable
 private fun RowScope.ScorecardRight(scorecard: Scorecard) {
     Column(modifier = Modifier.weight(1f)) {
-        ScoreBox("3x", scorecard.threeKind)
-        ScoreBox("4x", scorecard.fourKind)
-        ScoreBox("FH", scorecard.fullHouse)
-        ScoreBox("SS", scorecard.smallStraight)
-        ScoreBox("LS", scorecard.largeStraight)
+        ScoreBox("3-kind", scorecard.threeKind)
+        ScoreBox("4-kind", scorecard.fourKind)
+        ScoreBox("Full House", scorecard.fullHouse)
+        ScoreBox("Sm. Straight", scorecard.smallStraight)
+        ScoreBox("Lg. Straight", scorecard.largeStraight)
         ScoreBox("Chance", scorecard.chance)
-        ScoreBox("5x", scorecard.yahtzee)
+        ScoreBox("Yahtzee", scorecard.yahtzee)
         ExtraBox("Bonus", scorecard.yahtzeeBonus)
-    }
-}
-
-@Composable
-private fun ExtraBox(label: String, value: Int?) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(8.dp)
-    ) {
-        Text(label, color = Color.White, modifier = Modifier.weight(1f))
-        Text(value?.toString().orEmpty(), color = Color.White, modifier = Modifier.weight(1f))
     }
 }
 
@@ -143,7 +118,13 @@ private fun ScoreBox(label: String, scoreBox: ScoreBox) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.wrapContentHeight()
     ) {
-        Text(label, color = Color.White, modifier = Modifier.weight(1f).padding(8.dp))
+        Text(
+            text = label,
+            color = Color.White,
+            modifier = Modifier
+                .weight(1f)
+                .padding(8.dp)
+        )
 
         when (scoreBox) {
             is ScoreBox.Unfilled -> {
@@ -161,6 +142,7 @@ private fun ScoreBox(label: String, scoreBox: ScoreBox) {
                 Text(
                     text = scoreBox.score.toString(),
                     color = Color.White,
+                    fontWeight = FontWeight.Bold,
                     modifier = Modifier
                         .weight(1f)
                         .padding(8.dp)
@@ -176,6 +158,31 @@ private fun ScoreBox(label: String, scoreBox: ScoreBox) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ExtraBox(label: String, value: Int?) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.wrapContentHeight()
+    ) {
+        Text(
+            text = label,
+            color = Color.White,
+            modifier = Modifier
+                .weight(1f)
+                .padding(8.dp)
+        )
+
+        Text(
+            text = value?.toString().orEmpty(),
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier
+                .weight(1f)
+                .padding(8.dp)
+        )
     }
 }
 
