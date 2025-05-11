@@ -1,5 +1,6 @@
 package com.doximity.yahtzee
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlin.random.Random
@@ -27,15 +28,19 @@ class Roller {
     }
 
     suspend fun roll() {
-        diceFlow.emit(
-            diceFlow.value.map {
-                if (it.selected.not()) {
-                    it.copy(value = Random.nextInt(6) + 1)
-                } else {
-                    it
+        for (i in 1..10) {
+            diceFlow.emit(
+                diceFlow.value.map {
+                    if (it.selected.not()) {
+                        it.copy(value = Random.nextInt(6) + 1)
+                    } else {
+                        it
+                    }
                 }
-            }
-        )
+            )
+
+            delay(10)
+        }
     }
 
     suspend fun reset() {
