@@ -38,7 +38,7 @@ fun YahtzeeScreen() {
 private fun YahtzeeContent(presenter: YahtzeePresenter) {
     val uiModel = presenter.present()
 
-    Box(modifier = Modifier.size(500.dp, 500.dp)) {
+    Box(modifier = Modifier.size(500.dp, 700.dp)) {
         Column(
             modifier = Modifier
                 .background(Color(41, 74, 18))
