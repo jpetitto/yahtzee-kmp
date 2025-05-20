@@ -7,11 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
@@ -38,14 +40,18 @@ fun YahtzeeScreen() {
 private fun YahtzeeContent(presenter: YahtzeePresenter) {
     val uiModel = presenter.present()
 
-    Box(modifier = Modifier.size(500.dp, 700.dp)) {
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(41, 74, 18))
+    ) {
         Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
-                .background(Color(41, 74, 18))
                 .padding(8.dp)
-                .fillMaxHeight()
+                .sizeIn(maxWidth = 450.dp, maxHeight = 550.dp)
         ) {
-
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.padding(8.dp)
@@ -72,7 +78,7 @@ private fun YahtzeeContent(presenter: YahtzeePresenter) {
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Row {
+            Row(modifier = Modifier.wrapContentWidth()) {
                 ScorecardLeft(uiModel.scorecard)
                 ScorecardRight(uiModel.scorecard)
             }
