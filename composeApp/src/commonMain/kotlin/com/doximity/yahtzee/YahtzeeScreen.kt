@@ -1,6 +1,7 @@
 package com.doximity.yahtzee
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Button
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.Text
@@ -49,8 +51,9 @@ private fun YahtzeeContent(presenter: YahtzeePresenter) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
+                .sizeIn(maxWidth = 500.dp, maxHeight = 600.dp)
+                .border(width = 2.dp, color = Color.White, shape = RoundedCornerShape(4.dp))
                 .padding(8.dp)
-                .sizeIn(maxWidth = 450.dp, maxHeight = 550.dp)
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
